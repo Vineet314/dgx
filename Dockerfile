@@ -1,3 +1,2 @@
-FROM python:3.10-slim
+FROM nvcr.io/nvidia/pytorch:25.08-py3
 WORKDIR /workspace
-CMD ["/bin/bash"]
