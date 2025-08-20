@@ -1,0 +1,6 @@
+numpy
+tiktoken 
+# install pytorch from https://pytorch.org/get-started/locally/
+tqdm 
+datasets
+requests
