@@ -1,11 +1,9 @@
-
 import os
 import math
 import argparse
-import tiktoken
-import requests
 import numpy as np
 
+from pathlib import Path
 from typing import Literal
 from time import perf_counter
 from dataclasses import dataclass
@@ -192,32 +190,6 @@ elif ModelConfig.attn == 'mla':
 
 # _______________ DATASET _________________
 
-def tokenize_and_save():
-    url = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # This will raise an error for bad responses (4xx or 5xx)
-        text = response.text
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading the dataset: {e}")
-        return # Exit the function if download fails
-
-    enc = tiktoken.get_encoding("gpt2")
-    tokens = enc.encode(text)
-    tokens = np.array(tokens, dtype=np.uint16)
-
-    n = int(0.9 * len(tokens))
-    train_data = tokens[:n]
-    val_data = tokens[n:]
-
-    data_splits = {'train': train_data, 'val': val_data}
-    for split, data in data_splits.items():
-        file_path = f'{split}.bin'
-        with open(file_path, 'wb') as f:
-            f.write(data.tobytes())
-
-tokenize_and_save() # Using The Tiny Shakespeare dataset for demo
-
 class DataLoader:
     def __init__(self, B, T, file_path, device):
         self.B = B
@@ -264,9 +236,10 @@ class DataLoader:
             y = y.to(self.device)
         return x, y
 
-train_loader = DataLoader(B=TrainingConfig.batch_size, T=ModelConfig.block_size, file_path="train.bin", device=device)
-val_loader = DataLoader(B=TrainingConfig.batch_size, T=ModelConfig.block_size, file_path="val.bin", device=device)
-
+data_dir = os.path.join('data', TrainingConfig.dataset)
+if master_process : print(f"Using Dataset {Path(data_dir).stem}")
+train_loader = DataLoader(B=TrainingConfig.batch_size, T=ModelConfig.block_size, file_path=os.path.join(data_dir, "train.bin"), device=device)
+val_loader = DataLoader(B=TrainingConfig.batch_size, T=ModelConfig.block_size, file_path=os.path.join(data_dir, "val.bin"), device=device)
 # ____________ UTIL FUNCTIONS _________________
 
 def get_lr(iter, TrainingConfig:Trainconfig):
